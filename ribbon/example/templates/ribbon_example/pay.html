@@ -1,0 +1,227 @@
+{% load bootstrap3 %}
+
+<html>
+
+<head>
+    {% bootstrap_css %}
+    {% bootstrap_javascript jquery=1 %}
+</head>
+
+<body class="gray-bg">
+
+<div class="middle-box text-center loginscreen animated fadeInDown">
+    <div>
+        <div>
+            <h1 class="logo-name">Django Ribbon</h1>
+        </div>
+
+        {% bootstrap_messages %}
+
+        <div class="container">
+            <p>Pay with credit card</p>
+
+            <form role="form" id="payment-form" class="m-t" method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="form-group">
+                            <label>CARD LIST</label>
+                            <div class="input-group" style="width: 100%">
+                                {{ form.card }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <fieldset class="addNewCard" disabled>
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div class="form-group">
+                                <label for="cardNumber">CARD NUMBER</label>
+                                <div class="input-group">
+                                    <input
+                                            type="text"
+                                            size="20"
+                                            class="form-control"
+                                            placeholder="Valid Card Number"
+                                            required autofocus
+                                            data-stripe="number"
+                                    />
+                                    <span class="input-group-addon"><i class="fa fa-credit-card"></i></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-7 col-md-7">
+                            <div class="form-group">
+                                <label for="cardExpiry">
+                                    <span class="hidden-xs">EXPIRATION</span>
+                                    <span class="visible-xs-inline">EXP</span> DATE
+                                </label>
+                                <fieldset name="cardExpiry">
+                                    <div class="col-xs-6 col-lg-6">
+                                        <input
+                                                type="text"
+                                                size="2"
+                                                class="form-control"
+                                                placeholder="MM"
+                                                required
+                                                data-stripe="exp_month"
+                                        />
+                                    </div>
+                                    <div class="col-xs-6 col-6">
+                                        <input
+                                                type="text"
+                                                size="2"
+                                                class="form-control"
+                                                placeholder="YY"
+                                                required
+                                                data-stripe="exp_year"
+                                        />
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </div>
+                        <div class="col-xs-5 col-md-5 pull-right">
+                            <div class="form-group">
+                                <label for="cardCVC">CV CODE</label>
+                                <input type="text"
+                                       size="4"
+                                       class="form-control"
+                                       placeholder="CVC"
+                                       required
+                                       data-stripe="cvc"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+                <hr style="margin: 0 0 15px 0">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="form-group">
+                            <label>CHARGE</label>
+                            <div class="input-group" style="width: 100%">
+                                {{ form.charge }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <button class="subscribe btn btn-success btn-block submit" type="submit">
+                            Pay <span class="glyphicon glyphicon-check"></span>
+                        </button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <p class="payment-errors" style="display:none;"></p>
+                    </div>
+                </div>
+            </form>
+            <div class="row">
+                <div class="m-t col-sm-6 b-r">
+                    <div class="panel panel-default credit-card-box">
+                        <div class="panel-heading display-table">
+                            <div class="row display-tr">
+                                <h3 class="panel-title display-td">Credit card list</h3>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            {% for stripe_card in user.stripecustomer.stripecard_set.all %}
+                                <div>{{ stripe_card }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="m-t col-sm-6 b-r">
+                    <div class="panel panel-default credit-card-box">
+                        <div class="panel-heading display-table">
+                            <div class="row display-tr">
+                                <h3 class="panel-title display-td">Charge history list</h3>
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            {% for stripe_charge in user.stripecustomer.stripecharge_set.all %}
+                                <div>{{ stripe_charge }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="m-t">
+            <small><a href="https://github.com/silverfix/django-ribbon">Django Ribbon</a></small>
+        </p>
+    </div>
+</div>
+
+<script type="text/javascript" src="https://js.stripe.com/v2/"></script>
+<script type="text/javascript">
+    $(function () {
+        Stripe.setPublishableKey("{{ settings.STRIPE_PUBLIC_KEY }}");
+
+        var $form = $('#payment-form'),
+            $submit = $form.find('.submit'),
+            $paymentErrors = $form.find('.payment-errors'),
+            $cardSelect = $form.find('#id_card'),
+            $addNewCardFieldset = $form.find('.addNewCard');
+
+        // Disable new card fields
+        $cardSelect.on('change', function (e) {
+            if ($(this).val() === '-1') {
+                $addNewCardFieldset.prop('disabled', false);
+            }
+            else {
+                $addNewCardFieldset.prop('disabled', true);
+            }
+        }).change();
+
+        function stripeResponseHandler(status, response) {
+            if (response.error) { // Problem!
+
+                // Show the errors on the form:
+                $paymentErrors.show().text(response.error.message);
+                $submit.prop('disabled', false); // Re-enable submission
+                $addNewCardFieldset.prop('disabled', false); // Re-enable fieldset
+
+            } else { // Token was created!
+
+                // Get the token ID:
+                var token = response.id;
+
+                // Insert the token ID into the form so it gets submitted to the server:
+                $form.append($('<input type="hidden" name="stripeToken">').val(token));
+
+                // Submit the form:
+                $form.get(0).submit();
+            }
+        }
+
+        $form.submit(function (event) {
+            // Disable the submit button to prevent repeated clicks:
+            $submit.prop('disabled', true);
+            // Disable fieldset
+            $addNewCardFieldset.prop('disabled', true);
+
+            // Hide errors
+            $paymentErrors.hide();
+
+            if ($cardSelect.val() === '-1') {
+                // Request a token from Stripe:
+                Stripe.card.createToken($form, stripeResponseHandler);
+
+                // Prevent the form from being submitted:
+                return false;
+            }
+            else {
+                // Submit form
+                return true;
+            }
+        });
+    });
+</script>
+</body>
+</html>
