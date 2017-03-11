@@ -22,6 +22,7 @@
 
             <form role="form" id="payment-form" class="m-t" method="post">
                 {% csrf_token %}
+                {{ form.stripe_token }}
                 <div class="row">
                     <div class="col-xs-12">
                         <div class="form-group">
@@ -167,7 +168,8 @@
             $submit = $form.find('.submit'),
             $paymentErrors = $form.find('.payment-errors'),
             $cardSelect = $form.find('#id_card'),
-            $addNewCardFieldset = $form.find('.addNewCard');
+            $addNewCardFieldset = $form.find('.addNewCard'),
+            $stripeTokenField = $form.find("[name='stripe_token']");
 
         // Disable new card fields
         $cardSelect.on('change', function (e) {
@@ -193,7 +195,7 @@
                 var token = response.id;
 
                 // Insert the token ID into the form so it gets submitted to the server:
-                $form.append($('<input type="hidden" name="stripeToken">').val(token));
+                $stripeTokenField.val(token);
 
                 // Submit the form:
                 $form.get(0).submit();

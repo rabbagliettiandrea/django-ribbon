@@ -3,12 +3,13 @@
 from django import forms
 
 
-class CreditCardListForm(forms.Form):
+class CreditCardForm(forms.Form):
+    stripe_token = forms.CharField(widget=forms.HiddenInput, required=False)
     card = forms.ChoiceField(widget=forms.Select(attrs={'style': 'width: 100%'}))
 
-    def __init__(self, cards=None, *args, **kwargs):
-        super(CreditCardListForm, self).__init__(*args, **kwargs)
-        self.fields['card'].choices = []
-        if cards:
-            self.fields['card'].choices.extend([(card.id, card) for card in cards])
-        self.fields['card'].choices.append(('-1', '-- Add new card --'))
+    def __init__(self, *args, **kwargs):
+        choices = kwargs.pop('choices', {})
+        super(CreditCardForm, self).__init__(*args, **kwargs)
+        for name, value in choices.iteritems():
+            if value:
+                self.fields[name].choices = value
