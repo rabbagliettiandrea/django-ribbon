@@ -48,12 +48,14 @@ class StripeCharge(_TimedatedModel):
     amount = models.PositiveIntegerField()
     currency = models.CharField(max_length=10)
 
-    def __unicode__(self):
+    def get_amount_display(self):
         amount_unicode = unicode(self.amount)
-        amount_pretty = '{}.{}'.format(amount_unicode[:-2], amount_unicode[-2:])
+        return '{}.{}'.format(amount_unicode[:-2], amount_unicode[-2:])
+
+    def __unicode__(self):
         return '[{}] [{}] {} {}'.format(
             date_format(self.timestamp_created, settings.DATETIME_FORMAT),
             self.stripe_card,
-            amount_pretty,
+            self.get_amount_display(),
             self.currency
         )
