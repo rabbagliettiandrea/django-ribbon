@@ -5,11 +5,11 @@ from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect
 from django.views import generic
 
-from ribbon import mixins
+import ribbon.handlers
 from ribbon.example import forms
 
 
-class RibbonView(mixins.StripeMixin, generic.FormView):
+class RibbonView(generic.FormView):
     template_name = 'ribbon_example/pay.html'
     form_class = forms.PayForm
 
@@ -37,13 +37,13 @@ class RibbonView(mixins.StripeMixin, generic.FormView):
             stripe_card = self.request.user.stripecustomer.stripecard_set.get(pk=stripe_card_pk)
         elif stripe_token:
             if hasattr(self.request.user, 'stripecustomer'):
-                stripe_card = self.old_customer__new_card(customer=user.stripecustomer, token=stripe_token)
+                stripe_card = ribbon.handlers.old_customer__new_card(customer=user.stripecustomer, token=stripe_token)
             else:
-                stripe_card = self.new_customer__new_card(user=user, token=stripe_token)
+                stripe_card = ribbon.handlers.new_customer__new_card(user=user, token=stripe_token)
         else:
             return HttpResponseBadRequest('Bad request: no card/stripe_token in POST request')
 
         amount = '{:.2f}'.format(charge).replace('.', '')
-        stripe_charge = self.charge(card=stripe_card, amount=amount)
+        stripe_charge = ribbon.handlers.charge(card=stripe_card, amount=amount)
         messages.success(self.request, 'Payment done!')
         return super(RibbonView, self).form_valid(form)
