@@ -37,7 +37,7 @@ class StripeCard(_TimedatedModel):
     funding = models.CharField(max_length=64)
 
     def __unicode__(self):
-        return '**** **** **** {} - Exp: {}/{}'.format(self.last4, self.exp_year, self.exp_month)
+        return '**** **** **** {} ({}) - Exp: {}/{}'.format(self.last4, self.brand, self.exp_year, self.exp_month)
 
 
 class StripeCharge(_TimedatedModel):
